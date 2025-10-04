@@ -6,17 +6,19 @@ namespace BBP;
 
 internal class Program
 {
-    static string FromHexStringText(string all_decimals)
+    static readonly double Log2_10 = Math.Log2(10);
+
+    static string HexToDecText(string all_decimals)
         => all_decimals.IndexOf('.') is int idx && idx >= 0 ?
-            FromHexStringText(all_decimals[0..idx], all_decimals[(idx + 1)..])
-            : FromHexStringText(all_decimals, "");
+            HexToDecText(all_decimals[0..idx], all_decimals[(idx + 1)..])
+            : HexToDecText(all_decimals, "");
     /// <summary>
     /// 十六进制小数到十进制小数的转换方法
     /// </summary>
     /// <param name="integral"></param>
     /// <param name="pure_decimals"></param>
     /// <returns></returns>
-    static string FromHexStringText(string integral, string pure_decimals)
+    static string HexToDecText(string integral, string pure_decimals)
     {
         var builder = new StringBuilder();
         if (!string.IsNullOrEmpty(integral))
@@ -36,20 +38,20 @@ internal class Program
             if (BigInteger.TryParse(pure_decimals, NumberStyles.HexNumber, null, out var pure))
             {
                 BigInteger result = BigInteger.Zero;
-                var pure_dec = pure.ToString();
-                var rt = pure_dec.ToString();
-                if (rt.Length > 0)
+                var binary_bits = pure.GetBitLength();
+                var decimal_digits = (int)Math.Ceiling(binary_bits / Log2_10);
+                if (decimal_digits > 0)
                 {
-                    List<BigInteger> factors = [];
-                    BigInteger m = 10*BigInteger.Pow(10, rt.Length);
-                    for(int i= 0; i < pure_decimals.Length; i++)
+                    var mod = 10 * BigInteger.Pow(10, decimal_digits) - 1;
+                    for (int i = 0; i < pure_decimals.Length; i++)
                     {
-                        m >>= 4;
-                        var b = int.TryParse(pure_decimals[i..(i + 1)], NumberStyles.HexNumber,
-                            null, out var val);
-                        if (b)
+                        mod >>= 4;
+                        if (int.TryParse(
+                            pure_decimals[i..(i + 1)],
+                            NumberStyles.HexNumber,
+                            null, out var val))
                         {
-                            result += val * m;
+                            result += val * mod;
                         }
                     }
                     builder.Append(result.ToString());
@@ -157,7 +159,7 @@ internal class Program
         {
             Console.WriteLine("Pi verified!");
 
-            var ty = FromHexStringText(tx);
+            var ty = HexToDecText(tx);
 
         }
         var builder = new StringBuilder();
@@ -179,6 +181,6 @@ internal class Program
         var text = sumx.ToString("X");
         Console.WriteLine($"HEX:{text}");
         Console.WriteLine();
-        Console.WriteLine($"DEC:{FromHexStringText("3", text[1..])}");
+        Console.WriteLine($"DEC:{HexToDecText("3", text[1..])}");
     }
 }
